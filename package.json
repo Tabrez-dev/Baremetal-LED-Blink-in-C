@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "@xpack-dev-tools/openocd": "^0.12.0-4.1",
-    "xpm": "^0.20.5"
-  }
-}
