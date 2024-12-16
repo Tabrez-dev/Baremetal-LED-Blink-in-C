@@ -1,0 +1,60 @@
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+FLASH            0x0000000008000000 0x0000000000020000 xr
+SRAM             0x0000000020000000 0x0000000000004000 xrw
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+
+.text           0x0000000008000000      0x170
+ *(.vector)
+ .vector        0x0000000008000000       0xa4 boot_up.o
+ *(.text)
+ .text          0x00000000080000a4       0xcc boot_up.o
+ *(.rodata)
+                0x0000000008000170                . = ALIGN (0x4)
+                0x0000000008000170                _etext = .
+
+.glue_7         0x0000000008000170        0x0
+ .glue_7        0x0000000008000170        0x0 linker stubs
+
+.glue_7t        0x0000000008000170        0x0
+ .glue_7t       0x0000000008000170        0x0 linker stubs
+
+.vfp11_veneer   0x0000000008000170        0x0
+ .vfp11_veneer  0x0000000008000170        0x0 linker stubs
+
+.v4_bx          0x0000000008000170        0x0
+ .v4_bx         0x0000000008000170        0x0 linker stubs
+
+.iplt           0x0000000008000170        0x0
+ .iplt          0x0000000008000170        0x0 boot_up.o
+
+.rel.dyn        0x0000000008000170        0x0
+ .rel.iplt      0x0000000008000170        0x0 boot_up.o
+
+.data           0x0000000020000000        0xc load address 0x0000000008000170
+                0x0000000020000000                _sdata = .
+ *(.data)
+ .data          0x0000000020000000        0xc boot_up.o
+                0x000000002000000c                _edata = .
+
+.igot.plt       0x000000002000000c        0x0 load address 0x000000000800017c
+ .igot.plt      0x000000002000000c        0x0 boot_up.o
+
+.bss            0x000000002000000c        0xa load address 0x000000000800017c
+                0x000000002000000c                _sbss = .
+ *(.bss)
+ .bss           0x000000002000000c        0xa boot_up.o
+                0x0000000020000016                _ebss = .
+LOAD boot_up.o
+OUTPUT(boot_up.elf elf32-littlearm)
+LOAD linker stubs
+
+.ARM.attributes
+                0x0000000000000000       0x21
+ .ARM.attributes
+                0x0000000000000000       0x21 boot_up.o
