@@ -180,4 +180,4 @@ This modification highlights the importance of explicitly configuring the system
 References:
 1. stm32 rm--91 data sheet
 2. stm32f072rb-4 data sheet
-3. User manual stm32f072rb
+3. UM1690 User manual
