@@ -4,31 +4,46 @@ This project implements a bare-metal LED blinking application on the STM32F072B-
 
 ---
 
-## Overview  
+## Table of Contents
+1. [Overview](#overview)
+2. [Technical Details](#technical-details)
+   - [Memory Initialization](#memory-initialization)
+   - [GPIO Configuration](#gpio-configuration)
+   - [Delay Function](#delay-function)
+   - [LED Control](#led-control)
+3. [Build and Flash Instructions](#build-and-flash-instructions)
+   - [Prerequisites](#prerequisites)
+   - [Build](#build)
+   - [Flash](#flash)
+4. [Challenge and Solution to Resolve LED Blink Rate Discrepancy](#challenge-and-solution-to-resolve-led-blink-rate-discrepancy)
 
-The application utilizes the **GPIOC pin 6** (PC6) to control on board LED3. The LED alternates between ON and OFF states with a delay in between. Key aspects of the code include:  
-- **Reset Handler:** Sets up the `.data` and `.bss` memory sections.  
-- **GPIO Configuration:** Configures GPIOC pin 6 for output using the `MODER`, `OTYPER`, `OSPEEDR`, and `PUPDR` registers.  
-- **Delay Function:** Provides a software delay loop, allowing the LED to remain ON or OFF for a fixed duration.  
+---
+
+## Overview
+
+The application utilizes the **GPIOC pin 6** (PC6) to control onboard LED3. The LED alternates between ON and OFF states with a delay in between. Key aspects of the code include:
+- **Reset Handler:** Sets up the `.data` and `.bss` memory sections and configures the system clock.
+- **GPIO Configuration:** Configures GPIOC pin 6 for output using the `MODER`, `OTYPER`, `OSPEEDR`, and `PUPDR` registers.
+- **Delay Function:** Provides a software delay loop, allowing the LED to remain ON or OFF for a fixed duration.
 
 ---
 
 ## Technical Details  
 From board schematic we can see there are 4 user LEDs
 
-![image](https://github.com/user-attachments/assets/4ce86cd1-8bcd-4520-9047-306dde55bca0)
+![image](https://github.com/user-attachments/assets/2f534e48-a53f-4470-8ea6-cbd4dd0af749)
 
 From Board user manual we find that LED3 is controoled by I/O PC6
 
-![image](https://github.com/user-attachments/assets/67fea08e-1a3a-4ff7-ad36-14dc9cc8b87b)
-
+![image](https://github.com/user-attachments/assets/16fcd696-5c92-4c70-8676-541014eb4d7c)
 
 
 ### Memory Initialization  
 
-During startup, the **Reset Handler** performs the following tasks:  
-1. **Initialize the `.data` section:** Copies initialized variables from flash memory to RAM.  
-2. **Zero-initialize the `.bss` section:** Clears uninitialized variables in RAM.  
+During startup, the **Reset Handler** performs the following tasks:
+1. **Initialize the `.data` section:** Copies initialized variables from flash memory to RAM and configures the system clock.
+2. **Zero-initialize the `.bss` section:** Clears uninitialized variables in RAM.
+
 
 This ensures that all variables are correctly initialized before the `main()` function executes.  
 
@@ -57,30 +72,6 @@ The LED is toggled using a **Read-Modify-Write** approach on the `GPIOC_ODR` (Ou
 - **Turn ON:** Set bit 6 of `GPIOC_ODR`.  
 - **Turn OFF:** Clear bit 6 of `GPIOC_ODR`.  
 
----
-
-## Code Snippets  
-
-### GPIO Configuration in `main()`  
-
-```c  
-// Enable GPIOC clock
-RCC_AHBENR |= (1 << 19);
-
-// Configure PC6 as output 
-GPIOC_MODER &= ~(3 << 12);   // Clear the MODER bits for PC6
-GPIOC_MODER |= (1 << 12);    // Set the MODER bits for PC6 to output
-
-// Configure PC6 as push-pull
-GPIOC_OTYPER &= ~(1 << 6);   // Clear the OTYPE bit for PC6 (push-pull)
-
-// Configure PC6 with high-speed
-GPIOC_OSPEEDR |= (3 << 12);  // Set the OSPEEDR bits for PC6 to high-speed
-
-// Configure PC6 as no pull-up, no pull-down
-GPIOC_PUPDR &= ~(3 << 12);   // Clear the PUPDR bits for PC6 (no pull-up, no pull-down)
-
-```
 # Build and Flash Instructions
 
 ## Prerequisites
@@ -113,13 +104,74 @@ openocd -f stm32f0discovery.cfg
 ```
 telnet localhost 4444
 reset halt
-flash write_image erase boot_up.bin 0x08000000
+flash write_image erase boot_up.elf
 reset run
 ```
+or 
 
-## Highlights
+```
+# Reset the target and initialize
+reset init
 
-- This project illustrates how to program the STM32F072B-DISCO board at the bare-metal level.
-- By directly manipulating registers, the implementation provides a deeper understanding of hardware operations.
-- It serves as an excellent starting point for learning about embedded systems programming.
+# Write the firmware image
+flash write_image erase boot_up.elf
 
+# Resume the target (start executing the code)
+resume
+```
+
+## Challenge and Solution to Resolve LED Blink Rate Discrepancy
+
+#### Problem Observed
+When flashing the firmware onto the STM32F072B-DISCO board using OpenOCD and Telnet commands, I noticed that the LED blinked at different rates depending on the commands used. Specifically:  
+1. Using the following commands resulted in one blink rate:
+   ```bash
+   telnet localhost 4444
+   reset halt
+   flash write_image erase boot_up.elf
+   reset run
+   ```
+2. Using these commands caused a different blink rate:
+   ```bash
+   # Reset the target and initialize
+   reset init
+
+   # Write the firmware image
+   flash write_image erase boot_up.elf
+
+   # Resume the target (start executing the code)
+   resume
+   ```
+
+Additionally, pressing the reset button on the board caused the LED to blink at a slower rate compared to resuming the code execution through Telnet commands.
+
+#### Root Cause
+After investigating the issue, I determined that the difference in blink rates was due to the system clock configuration. The STM32F072B-DISCO board’s `.cfg` file used by OpenOCD specifies a default clock rate, which may differ from the one expected by the application.  
+
+Since the delay loop in the code relies on the system clock frequency, variations in the clock configuration directly affect the timing of the delay, causing the LED to blink faster or slower.
+
+- **Faster Clock:** Results in a shorter delay and a faster blink rate.
+- **Slower Clock:** Leads to a longer delay and a slower blink rate.
+
+#### Solution
+To address this, I explicitly configured the system clock in the **Reset Handler** by adding a `SystemClock_Config()` function. This function sets the clock source to the HSI (High Speed Internal) oscillator and ensures the clock rate is consistent from the very beginning of the firmware’s execution.  
+
+![image](https://github.com/user-attachments/assets/21cd6b17-0ea4-419f-855f-e3c5afedc9ed)
+
+![image](https://github.com/user-attachments/assets/a450ab77-d38a-4fe3-8c46-b4b2a832b5f6)
+
+![image](https://github.com/user-attachments/assets/032db28e-9af8-42c7-b163-61b87e6ffb09)
+
+From block diagram HSI is 8MHz
+
+With this change:
+1. The clock configuration is set immediately after the processor resets, before the `main()` function runs.
+2. The application no longer depends on the default clock settings from the OpenOCD environment.
+
+#### Outcome
+After implementing the `SystemClock_Config()` function in the Reset Handler:
+- The LED blink rate became consistent regardless of which Telnet commands were used.
+- Pressing the reset button on the board no longer caused a change in the blink rate.
+- The system now behaves predictably in all scenarios, ensuring that the application operates at the intended clock frequency.
+
+This modification highlights the importance of explicitly configuring the system clock in bare-metal programming to avoid dependencies on external debugging environments.
