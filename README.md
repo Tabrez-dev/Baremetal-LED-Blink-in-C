@@ -177,3 +177,7 @@ After implementing the `SystemClock_Config()` function in the Reset Handler:
 - The system now behaves predictably in all scenarios, ensuring that the application operates at the intended clock frequency.
 
 This modification highlights the importance of explicitly configuring the system clock in bare-metal programming to avoid dependencies on external debugging environments.
+References:
+1. stm32 rm--91 data sheet
+2. stm32f072rb-4 data sheet
+3. User manual stm32f072rb
