@@ -38,6 +38,10 @@ From board schematic we can see there are 4 user LEDs
 
 From Board user manual we find that LED3 is controlled by I/O PC6
 
+![image](https://github.com/user-attachments/assets/e75df093-4a31-4320-82d2-c01840f3c078)
+
+OpenOCD (Open On-Chip Debugger) is used to interface with the STM32F072B-DISCO board for debugging and flashing the firmware. It communicates with the board through a debugger (such as ST-Link) and allows for low-level control over the microcontroller. Telnet is used to remotely connect to OpenOCD, enabling the user to send commands like resetting the board, flashing firmware, and running or halting execution
+
 ### Memory Initialization  
 
 During startup, the **Reset Handler** performs the following tasks:
