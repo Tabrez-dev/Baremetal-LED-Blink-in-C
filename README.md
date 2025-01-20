@@ -107,7 +107,7 @@ openocd -f stm32f0discovery.cfg
 ```
 telnet localhost 4444
 reset halt
-flash write_image erase boot_up.elf
+flash write_image erase main.elf
 reset run
 ```
 or 
@@ -117,7 +117,7 @@ or
 reset init
 
 # Write the firmware image
-flash write_image erase boot_up.elf
+flash write_image erase main.elf
 
 # Resume the target (start executing the code)
 resume
